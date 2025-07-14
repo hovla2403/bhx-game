@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Reward API - Frontend Only</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 10px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+        }
+        
+        .content {
+            padding: 20px;
+        }
+        
+        .button-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .game-btn {
+            padding: 15px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .game1-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .game2-btn {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+        
+        .game-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .game-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .progress-container {
+            display: none;
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            text-align: center;
+            color: #495057;
+            font-weight: 500;
+        }
+        
+        .results-container {
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+        
+        .result-item {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-left: 4px solid #28a745;
+            animation: slideIn 0.3s ease;
+        }
+        
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .result-title {
+            font-weight: bold;
+            color: #495057;
+        }
+        
+        .result-badge {
+            background: #28a745;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .result-details {
+            font-size: 14px;
+            color: #6c757d;
+            line-height: 1.4;
+        }
+        
+        .summary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .stat-item {
+            background: rgba(255,255,255,0.1);
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 1.5rem;
+            font-weight: bold;
+            display: block;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .button-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎮 Game Reward Controller</h1>
+            <p>Frontend Only - Chạy trực tiếp trên trình duyệt</p>
+        </div>
+        
+        <div class="content">
+            <div class="button-container">
+                <button class="game-btn game1-btn" onclick="runGame(37)">
+                    🎯 Game 1 (ID: 37)
+                </button>
+                <button class="game-btn game2-btn" onclick="runGame(36)">
+                    🎲 Game 2 (ID: 36)
+                </button>
+            </div>
+            
+            <div class="progress-container" id="progressContainer">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div class="progress-text" id="progressText">Đang khởi tạo...</div>
+            </div>
+            
+            <div id="results"></div>
+        </div>
+    </div>
+
+    <script>
+        // Data được lưu trực tiếp trong JavaScript
+        const API_DATA = [
+            {
+                "wardId": 10259,
+                "accesstoken": "5e801824-8f05-40c8-932b-f8c780ba42dc",
+                "authorization": "Bearer 9F2EE1DBECBA216DBA5A4E7879C8C7C8",
+                "customer-id": "1016033940",
+                "deviceid": "46b6d115-2a3a-4597-bede-b8a89c7c8ae3",
+                "devicetoken": "NTZmYTI4MWJkZDQxYWNhNDIyNWYwMzY4YjhhMzY1NWU=",
+                "username": "0327392104"
+            },
+            {
+                "wardId": 10394,
+                "accesstoken": "295e427c-efbb-427b-aa08-c2c8089c054d",
+                "authorization": "Bearer 7B1EFA43EA6BB018F554C157703D1DD4",
+                "customer-id": "1135824412",
+                "deviceid": "b1ec2cd6-51e8-4d74-bad0-216871115faa",
+                "devicetoken": "ZjdkNTI0MGZkMTY2ODNlYTBiYjc1M2EzOGJlOWMxMDA=",
+                "username": "0941195459"
+            },
+            {
+                "wardId": 10300,
+                "accesstoken": "937ecab4-a560-44f3-b4a3-3a1bfbb16045",
+                "authorization": "Bearer C459C2800E32823BE7873A6C6D592E44",
+                "customer-id": "1116925107",
+                "deviceid": "87625f53-9434-456f-b50c-2a3dabc7b151",
+                "devicetoken": "MzgwZDg0NjUwMTQ0MDlmNDM2YzVlMzNiNzAxN2YxYTA=",
+                "username": "0764849348"
+            },
+            {
+                "wardId": 10259,
+                "accesstoken": "ddfb632b-a15b-4288-9106-c1bd6c353774",
+                "authorization": "Bearer 9379971206DD0B954458C282D770D566",
+                "customer-id": "1105485254",
+                "deviceid": "00c0adb8-5126-4617-b0cb-e7f289d06073",
+                "devicetoken": "YmZlMTM4YmMwOTlhNjhmYWNhM2UyNGRjMDJhMTk2ODQ=",
+                "username": "0568678704"
+            },
+            {
+                "wardId": 10259,
+                "accesstoken": "b1f147f1-f04c-43bb-8cad-233989377f36",
+                "authorization": "Bearer A61DEA67472F4192B1A58CE0237C6C24",
+                "customer-id": "1109342324",
+                "deviceid": "46b40e45-9a50-4280-a650-b48974979e65",
+                "devicetoken": "NTEwNzcwYzk0ZDI0NGJiYzdlMzFkMDhhMWM4YTI3YTA=",
+                "username": "0346493309"
+            },
+            {
+                "wardId": 10259,
+                "accesstoken": "fc0751f2-f097-452f-8f0e-596785b39251",
+                "authorization": "Bearer 7C81F355F3A36E470164B3F5D4DE9FB7",
+                "customer-id": "1086824852",
+                "deviceid": "6f71a141-ba0c-438b-ad30-cd6a73bde9cc",
+                "devicetoken": "ZmMxYzI2MmU2YmQ3YTk0M2Q0OTJkZjMwNzkxZWY2NWQ=",
+                "username": "0911725376"
+            },
+            {
+                "wardId": 10259,
+                "accesstoken": "a9941ba4-4562-4030-af35-b0e5144863ae",
+                "authorization": "Bearer 2D685B5CE3106EC81BF3BA01D394F543",
+                "customer-id": "1090061519",
+                "deviceid": "0a815bc8-885e-4d00-8d3f-ec46b34c7e9a",
+                "devicetoken": "NjE1NzFjZmI0YzNkNjczZTE5ZWFjNjM3ZGEzZWZkMTA=",
+                "username": "0396208270"
+            }
+        ];
+
+        // Hàm gọi API từ frontend
+        async function callGetRewardAPIForRecord(item, gameId, onProgress) {
+            const url = 'https://apibhx.tgdd.vn/Game/GetReward';
+            const baseHeaders = {
+                'accept': 'application/json, text/plain, */*',
+                // 'accept-encoding': 'gzip, deflate, br, zstd',
+                'accept-language': 'en-US,en;q=0.9',
+                'content-type': 'application/json',
+                'origin': 'https://www.bachhoaxanh.com',
+                'platform': 'webnew',
+                // 'priority': 'u=1, i',
+                'referer': 'https://www.bachhoaxanh.com/game/ngay-10-luong-ve',
+                'referer-url': 'https://www.bachhoaxanh.com/game/ngay-10-luong-ve',
+                'reversehost': 'http://bhxapi.live',
+                // 'sec-ch-ua': '"Not)A;Brand";v="8", "Chromium";v="138", "Google Chrome";v="138"',
+                // 'sec-ch-ua-mobile': '?0',
+                // 'sec-ch-ua-platform': '"Windows"',
+                // 'sec-fetch-dest': 'empty',
+                // 'sec-fetch-mode': 'cors',
+                // 'sec-fetch-site': 'cross-site',
+                'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
+                'xapikey': 'bhx-api-core-2022'
+            };
+
+            const headers = {
+                ...baseHeaders,
+                'accesstoken': item.accesstoken,
+                'authorization': item.authorization,
+                'customer-id': item['customer-id'],
+                'deviceid': item.deviceid,
+                'devicetoken': item.devicetoken,
+                'username': item.username
+            };
+
+            const payload = {
+                fromapp: 'mwg-game-web-bhx',
+                locationInfo: {},
+                gameId: gameId,
+                typeId: 1,
+                wardId: item.wardId
+            };
+
+            console.log(`Bắt đầu xử lý wardId: ${item.wardId}, username: ${item.username}, gameId: ${gameId}`);
+
+            for (let i = 1; i <= 5; i++) {
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: headers,
+                        body: JSON.stringify(payload)
+                    });
+
+                    const data = await response.json();
+
+                    // Gọi callback để cập nhật progress
+                    onProgress({
+                        wardId: item.wardId,
+                        username: item.username,
+                        gameId: gameId,
+                        attempt: i,
+                        status: 'processing',
+                        timestamp: new Date().toISOString()
+                    });
+
+                    if (data.data && data.data.status == 2) {
+                        console.log(`THÀNH CÔNG tại lần gọi thứ ${i} với wardId: ${item.wardId}, username: ${item.username}`);
+                        return {
+                            wardId: item.wardId,
+                            username: item.username,
+                            gameId: gameId,
+                            attempt: i,
+                            success: true,
+                            message: `Thành công tại lần thử thứ ${i}`,
+                            timestamp: new Date().toISOString()
+                        };
+                    }
+                } catch (error) {
+                    console.error(`Lỗi khi gọi API lần ${i} với wardId ${item.wardId}:`, error.message);
+
+                    if (error.status === 429) {
+                        console.log(`DỪNG tại lần gọi thứ ${i} với wardId: ${item.wardId} vì lỗi quá nhiều yêu cầu (429)`);
+                        return {
+                            wardId: item.wardId,
+                            username: item.username,
+                            gameId: gameId,
+                            attempt: i,
+                            success: false,
+                            error: 'Quá nhiều yêu cầu (429)',
+                            timestamp: new Date().toISOString()
+                        };
+                    }
+                }
+
+                await new Promise(resolve => setTimeout(resolve, 200));
+            }
+
+            return {
+                wardId: item.wardId,
+                username: item.username,
+                gameId: gameId,
+                attempt: 5,
+                success: false,
+                message: 'Đã thử 5 lần nhưng không thành công',
+                timestamp: new Date().toISOString()
+            };
+        }
+
+        // Hàm chạy game
+        async function runGame(gameId) {
+            const buttons = document.querySelectorAll('.game-btn');
+            const progressContainer = document.getElementById('progressContainer');
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
+            const results = document.getElementById('results');
+            
+            // Reset và disable buttons
+            buttons.forEach(btn => btn.disabled = true);
+            progressContainer.style.display = 'block';
+            progressFill.style.width = '0%';
+            progressText.textContent = 'Đang khởi tạo...';
+            results.innerHTML = '';
+            
+            console.log('=== FRONTEND GAME START ===');
+            console.log('GameId:', gameId);
+            console.log('Total records:', API_DATA.length);
+            
+            try {
+                const gameResults = [];
+                let completedCount = 0;
+
+                // Hàm callback để cập nhật progress
+                const onProgress = (progress) => {
+                    progressText.textContent = `Đang xử lý: ${progress.username} - Lần thử: ${progress.attempt}`;
+                };
+
+                // Xử lý từng item
+                for (const item of API_DATA) {
+                    const result = await callGetRewardAPIForRecord(item, gameId, onProgress);
+                    gameResults.push(result);
+                    completedCount++;
+
+                    // Cập nhật progress bar
+                    const percentage = (completedCount / API_DATA.length) * 100;
+                    progressFill.style.width = percentage + '%';
+                    progressText.textContent = `Hoàn thành: ${completedCount}/${API_DATA.length} (${Math.round(percentage)}%)`;
+
+                    // Hiển thị kết quả thành công
+                    if (result.success) {
+                        addResult(result);
+                    }
+
+                    // Delay giữa các request
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                }
+
+                // Hiển thị tổng kết
+                showSummary({
+                    gameId: gameId,
+                    results: gameResults,
+                    successCount: gameResults.filter(r => r.success).length,
+                    totalCount: gameResults.length
+                });
+
+            } catch (error) {
+                console.error('Error:', error);
+                results.innerHTML = `
+                    <div class="result-item" style="border-left-color: #dc3545;">
+                        <div class="result-header">
+                            <div class="result-title">❌ Lỗi xảy ra</div>
+                        </div>
+                        <div class="result-details">${error.message}</div>
+                    </div>
+                `;
+            } finally {
+                // Enable buttons
+                buttons.forEach(btn => btn.disabled = false);
+                progressContainer.style.display = 'none';
+            }
+        }
+
+        function addResult(result) {
+            const results = document.getElementById('results');
+            const resultElement = document.createElement('div');
+            resultElement.className = 'result-item';
+            resultElement.innerHTML = `
+                <div class="result-header">
+                    <div class="result-title">
+                        ✅ ${result.username} (Ward: ${result.wardId})
+                    </div>
+                    <div class="result-badge">
+                        Thành công lần ${result.attempt}
+                    </div>
+                </div>
+                <div class="result-details">
+                    <strong>Game ID:</strong> ${result.gameId}<br>
+                    <strong>Thời gian:</strong> ${new Date(result.timestamp).toLocaleString('vi-VN')}<br>
+                    <strong>Kết quả:</strong> ${result.message}
+                </div>
+            `;
+            results.appendChild(resultElement);
+            results.scrollTop = results.scrollHeight;
+        }
+
+        function showSummary(data) {
+            const results = document.getElementById('results');
+            const gameNumber = data.gameId === 36 ? '2' : '1';
+            
+            const summaryElement = document.createElement('div');
+            summaryElement.className = 'summary';
+            summaryElement.innerHTML = `
+                <h3>🎉 Hoàn thành Game ${gameNumber} (Frontend)</h3>
+                <div class="stats">
+                    <div class="stat-item">
+                        <span class="stat-number">${data.successCount}</span>
+                        <span class="stat-label">Thành công</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">${data.totalCount - data.successCount}</span>
+                        <span class="stat-label">Thất bại</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">${data.totalCount}</span>
+                        <span class="stat-label">Tổng cộng</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">${Math.round((data.successCount/data.totalCount)*100)}%</span>
+                        <span class="stat-label">Tỷ lệ thành công</span>
+                    </div>
+                </div>
+            `;
+            results.insertBefore(summaryElement, results.firstChild);
+        }
+    </script>
+</body>
+</html>

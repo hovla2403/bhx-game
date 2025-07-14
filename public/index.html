@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Reward API - Parallel Processing</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 10px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+        }
+        
+        .parallel-badge {
+            background: rgba(255,255,255,0.2);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            display: inline-block;
+            margin-top: 10px;
+        }
+        
+        .content {
+            padding: 20px;
+        }
+        
+        .button-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .game-btn {
+            padding: 15px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .game1-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .game2-btn {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+        
+        .game-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .game-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .progress-container {
+            display: none;
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            text-align: center;
+            color: #495057;
+            font-weight: 500;
+        }
+        
+        .active-processes {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .process-item {
+            background: rgba(255,255,255,0.8);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            border-left: 3px solid #ffc107;
+            animation: pulse 1.5s infinite;
+        }
+        
+        .results-container {
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+        
+        .result-item {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-left: 4px solid #28a745;
+            animation: slideIn 0.3s ease;
+        }
+        
+        .result-item.processing {
+            border-left-color: #ffc107;
+            background: #fff3cd;
+        }
+        
+        .result-item.error {
+            border-left-color: #dc3545;
+            background: #f8d7da;
+        }
+        
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .result-title {
+            font-weight: bold;
+            color: #495057;
+        }
+        
+        .result-badge {
+            background: #28a745;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .result-badge.processing {
+            background: #ffc107;
+        }
+        
+        .result-badge.error {
+            background: #dc3545;
+        }
+        
+        .result-details {
+            font-size: 14px;
+            color: #6c757d;
+            line-height: 1.4;
+        }
+        
+        .summary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .summary h3 {
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .stat-item {
+            background: rgba(255,255,255,0.1);
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 1.5rem;
+            font-weight: bold;
+            display: block;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        .processing-indicator {
+            animation: pulse 1.5s infinite;
+        }
+        
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            body {
+                padding: 5px;
+            }
+            
+            .header {
+                padding: 15px;
+            }
+            
+            .header h1 {
+                font-size: 1.5rem;
+            }
+            
+            .content {
+                padding: 15px;
+            }
+            
+            .button-container {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+            
+            .game-btn {
+                padding: 12px 15px;
+                font-size: 14px;
+            }
+            
+            .active-processes {
+                grid-template-columns: 1fr;
+            }
+            
+            .result-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 5px;
+            }
+            
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+            
+            .stat-item {
+                padding: 8px;
+            }
+            
+            .stat-number {
+                font-size: 1.2rem;
+            }
+            
+            .results-container {
+                max-height: 50vh;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 1.3rem;
+            }
+            
+            .content {
+                padding: 10px;
+            }
+            
+            .result-item {
+                padding: 10px;
+            }
+            
+            .result-details {
+                font-size: 13px;
+            }
+            
+            .stats {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎮 Game Reward Controller</h1>
+            <p>Chạy song song nhiều record cùng lúc</p>
+            <div class="parallel-badge">⚡ Parallel Processing Enabled</div>
+        </div>
+        
+        <div class="content">
+            <div class="button-container">
+                <button class="game-btn game1-btn" onclick="runGame(37)">
+                    🎯 Game 1 (ID: 37)
+                </button>
+                <button class="game-btn game2-btn" onclick="runGame(36)">
+                    🎲 Game 2 (ID: 36)
+                </button>
+            </div>
+            
+            <div class="progress-container" id="progressContainer">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div class="progress-text" id="progressText">Đang khởi tạo...</div>
+                <div class="active-processes" id="activeProcesses"></div>
+            </div>
+            
+            <div id="results"></div>
+        </div>
+    </div>
+
+    <script>
+        let eventSource = null;
+        let activeProcesses = new Map();
+        
+        function runGame(gameId) {
+            const buttons = document.querySelectorAll('.game-btn');
+            const progressContainer = document.getElementById('progressContainer');
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
+            const results = document.getElementById('results');
+            const activeProcessesDiv = document.getElementById('activeProcesses');
+            
+            // Reset và disable buttons
+            buttons.forEach(btn => btn.disabled = true);
+            progressContainer.style.display = 'block';
+            progressFill.style.width = '0%';
+            progressText.textContent = 'Đang khởi tạo...';
+            results.innerHTML = '';
+            activeProcesses.clear();
+            activeProcessesDiv.innerHTML = '';
+            
+            // Đóng kết nối cũ nếu có
+            if (eventSource) {
+                eventSource.close();
+            }
+            
+            // Tạo kết nối Server-Sent Events
+            eventSource = new EventSource(`/api/run-game/${gameId}`);
+            
+            eventSource.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                
+                switch(data.type) {
+                    case 'progress':
+                        updateActiveProcess(data.data);
+                        break;
+                    case 'result':
+                        removeActiveProcess(data.data);
+                        addResult(data.data);
+                        updateProgressBar(data.progress);
+                        break;
+                    case 'complete':
+                        showSummary(data.data);
+                        finishProcess();
+                        break;
+                    case 'error':
+                        showError(data.error);
+                        finishProcess();
+                        break;
+                }
+            };
+            
+            eventSource.onerror = function() {
+                showError('Lỗi kết nối với server');
+                finishProcess();
+            };
+        }
+        
+        function updateActiveProcess(data) {
+            const activeProcessesDiv = document.getElementById('activeProcesses');
+            const key = `${data.wardId}-${data.username}`;
+            
+            activeProcesses.set(key, data);
+            
+            // Cập nhật hiển thị các process đang chạy
+            activeProcessesDiv.innerHTML = '';
+            activeProcesses.forEach((process, key) => {
+                const processElement = document.createElement('div');
+                processElement.className = 'process-item';
+                processElement.innerHTML = `
+                    🔄 ${process.username} (${process.wardId}) - Lần ${process.attempt}
+                `;
+                activeProcessesDiv.appendChild(processElement);
+            });
+        }
+        
+        function removeActiveProcess(data) {
+            const key = `${data.wardId}-${data.username}`;
+            activeProcesses.delete(key);
+            
+            // Cập nhật hiển thị
+            const activeProcessesDiv = document.getElementById('activeProcesses');
+            activeProcessesDiv.innerHTML = '';
+            activeProcesses.forEach((process, key) => {
+                const processElement = document.createElement('div');
+                processElement.className = 'process-item';
+                processElement.innerHTML = `
+                    🔄 ${process.username} (${process.wardId}) - Lần ${process.attempt}
+                `;
+                activeProcessesDiv.appendChild(processElement);
+            });
+        }
+        
+        function updateProgressBar(progress) {
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
+            const percentage = (progress.completed / progress.total) * 100;
+            
+            progressFill.style.width = percentage + '%';
+            progressText.innerHTML = `
+                ⚡ Đang chạy song song - Hoàn thành: ${progress.completed}/${progress.total} (${Math.round(percentage)}%)
+            `;
+        }
+        
+        function addResult(result) {
+            const results = document.getElementById('results');
+            const isSuccess = result.success;
+            
+            // Chỉ hiển thị kết quả thành công
+            if (isSuccess) {
+                const resultElement = document.createElement('div');
+                resultElement.className = 'result-item success';
+                resultElement.innerHTML = `
+                    <div class="result-header">
+                        <div class="result-title">
+                            ✅ ${result.username} (Ward: ${result.wardId})
+                        </div>
+                        <div class="result-badge success">
+                            Thành công lần ${result.attempt}
+                        </div>
+                    </div>
+                    <div class="result-details">
+                        <strong>Game ID:</strong> ${result.gameId}<br>
+                        <strong>Thời gian:</strong> ${new Date(result.timestamp).toLocaleString('vi-VN')}<br>
+                        <strong>Kết quả:</strong> ${result.message}
+                    </div>
+                `;
+                results.appendChild(resultElement);
+                
+                // Scroll to bottom
+                results.scrollTop = results.scrollHeight;
+            }
+        }
+        
+        function showSummary(data) {
+            const results = document.getElementById('results');
+            const gameNumber = data.gameId === 36 ? '2' : '1';
+            
+            const summaryElement = document.createElement('div');
+            summaryElement.className = 'summary';
+            summaryElement.innerHTML = `
+                <h3>🎉 Hoàn thành Game ${gameNumber} (Song song)</h3>
+                <div class="stats">
+                    <div class="stat-item">
+                        <span class="stat-number">${data.successCount}</span>
+                        <span class="stat-label">Thành công</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">${data.totalCount - data.successCount}</span>
+                        <span class="stat-label">Thất bại</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">${data.totalCount}</span>
+                        <span class="stat-label">Tổng cộng</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">${Math.round((data.successCount/data.totalCount)*100)}%</span>
+                        <span class="stat-label">Tỷ lệ thành công</span>
+                    </div>
+                </div>
+            `;
+            results.insertBefore(summaryElement, results.firstChild);
+        }
+        
+        function showError(error) {
+            const results = document.getElementById('results');
+            results.innerHTML = `
+                <div class="result-item error">
+                    <div class="result-header">
+                        <div class="result-title">❌ Lỗi xảy ra</div>
+                    </div>
+                    <div class="result-details">${error}</div>
+                </div>
+            `;
+        }
+        
+        function finishProcess() {
+            const buttons = document.querySelectorAll('.game-btn');
+            const progressContainer = document.getElementById('progressContainer');
+            
+            buttons.forEach(btn => btn.disabled = false);
+            progressContainer.style.display = 'none';
+            
+            if (eventSource) {
+                eventSource.close();
+                eventSource = null;
+            }
+        }
+    </script>
+</body>
+</html>
+        
